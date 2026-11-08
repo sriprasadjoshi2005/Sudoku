@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sudoku Meadow – 50 Levels</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--card:rgba(255,255,255,.93);--ink:#1f3a2a;--soft:#5d7a68;--line:#9db5a4;--thick:#2f5d3f;--sel:#cfe8c8;--same:#e4f2dc;--given:#1f3a2a;--mine:#1d6fb8;--bad:#c0392b;--accent:#3c8d4f;--lock:#c9d3cc;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--card:rgba(24,38,29,.93);--ink:#e6f2e8;--soft:#9fb8a7;--line:#4b6455;--thick:#8fc79f;--sel:#2f5a3c;--same:#264332;--given:#e6f2e8;--mine:#7fc0ff;--bad:#ff7b6b;--accent:#4fae66;--lock:#3a4a40;}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);
+background:linear-gradient(#9fd3f0 0%,#d8f0e4 45%,#a8d98a 100%) fixed}
+#hills{position:fixed;inset:auto 0 0 0;height:38vh;z-index:-1;pointer-events:none}
+main{max-width:520px;margin:0 auto;padding:14px 12px 40px}
+h1{text-align:center;margin:6px 0 2px;font-size:1.6rem;color:#1f4d2e;text-shadow:0 1px 0 rgba(255,255,255,.6)}
+.sub{text-align:center;margin:0 0 12px;color:#2c5a3b;font-size:.9rem}
+.card{background:var(--card);border-radius:16px;padding:14px;box-shadow:0 6px 24px rgba(30,70,40,.22)}
+.hide{display:none!important}
+button{font:inherit;color:inherit;cursor:pointer}
+.tier{margin:14px 0 6px;font-weight:700;font-size:.95rem}
+.lv{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.lb{border:2px solid var(--accent);background:transparent;border-radius:10px;padding:6px 0;line-height:1.2;font-weight:700}
+.lb small{display:block;font-weight:400;color:var(--soft);font-size:.7rem;min-height:.9rem}
+.lb.done{background:var(--same)}
+.lb:disabled{border-color:var(--lock);color:var(--soft);cursor:not-allowed;opacity:.7}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;font-weight:600}
+.bar button{border:1.5px solid var(--accent);background:transparent;border-radius:8px;padding:5px 10px}
+#timer{font-variant-numeric:tabular-nums;font-size:1.25rem}
+#board{display:grid;grid-template-columns:repeat(9,1fr);width:100%;aspect-ratio:1;border:3px solid var(--thick);border-radius:6px;overflow:hidden;background:var(--card)}
+.c{display:flex;align-items:center;justify-content:center;border:1px solid var(--line);font-size:clamp(1rem,5.4vw,1.6rem);background:transparent;padding:0;user-select:none}
+.c:nth-child(9n+3),.c:nth-child(9n+6){border-right:2.5px solid var(--thick)}
+.c:nth-child(n+19):nth-child(-n+27),.c:nth-child(n+46):nth-child(-n+54){border-bottom:2.5px solid var(--thick)}
+.c.g{color:var(--given);font-weight:700}.c.m{color:var(--mine)}
+.c.same{background:var(--same)}.c.sel{background:var(--sel)}
+.c.bad{color:var(--bad);font-weight:700}
+#pad{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
+#pad button{border:1.5px solid var(--accent);background:transparent;border-radius:10px;padding:11px 0;font-size:1.2rem;font-weight:600}
+#pad button:active{background:var(--sel)}
+.ov{position:fixed;inset:0;background:rgba(15,35,22,.55);display:flex;align-items:center;justify-content:center;padding:20px;z-index:5}
+.md{max-width:380px;width:100%;text-align:center}
+.md h2{margin:4px 0 6px}.stars{font-size:2.2rem;color:#e8a317;letter-spacing:4px}
+.stat{display:flex;justify-content:space-around;margin:12px 0}.stat b{display:block;font-size:1.4rem}
+.btn{border:0;background:var(--accent);color:#fff;border-radius:10px;padding:10px 18px;font-weight:700;margin:4px}
+.btn.o{background:transparent;color:var(--ink);border:1.5px solid var(--accent)}
+.note{font-size:.8rem;color:var(--soft);text-align:center;margin-top:8px}
+</style>
+</head>
+<body>
+<svg id="hills" viewBox="0 0 800 300" preserveAspectRatio="none" aria-hidden="true"><path d="M0 140Q150 40 320 120T640 90T800 130V300H0Z" fill="#8cc971"/><path d="M0 200Q200 110 400 190T800 160V300H0Z" fill="#6fb25c"/><path d="M0 250Q250 190 500 240T800 220V300H0Z" fill="#549a4a"/></svg>
+<main>
+<h1>🌿 Sudoku Meadow</h1>
+<p class="sub">50 levels of Sudoku</p>
+
+<section id="menu" class="card">
+<div class="bar"><span>Total points: <b id="tot">0</b></span><span id="prog"></span></div>
+<div id="allDone" class="hide" style="text-align:center;font-weight:700;margin-bottom:8px">🏆 You completed all 50 levels. You are a Sudoku master!</div>
+<div id="levels"></div>
+<p class="note">Finish a level to unlock the next one.</p>
+</section>
+
+<section id="game" class="card hide">
+<div class="bar"><button id="back">← Levels</button><span id="ttl"></span><span id="timer">0:00</span></div>
+<div class="bar" style="font-weight:400;font-size:.9rem"><span></span><span>Mistakes: <b id="mis">0</b></span></div>
+<div id="board"></div>
+<div id="pad"></div>
+</section>
+</main>
+
+<div id="modal" class="ov hide"><div class="card md" id="mbox"></div></div>
+
+<script>
+const TIERS=['Beginner','Easy','Moderate','Difficult','Extremely Difficult'];
+const CLUES=[44,38,34,30,26],PAR=[300,420,600,780,1000],BASE=[500,600,700,800,1000];
+const MSGS=['🌟 Fantastic! You cracked it!','🌱 Well done! Your focus is blooming!','🏔️ Great job! Another peak conquered!','🦋 Wonderful! Sharp mind, steady hands!'];
+const $=id=>document.getElementById(id);
+let prog={unlocked:1,res:{}};
+try{const s=localStorage.getItem('sudokuMeadow');if(s)prog=JSON.parse(s)}catch(e){}
+const save=()=>{try{localStorage.setItem('sudokuMeadow',JSON.stringify(prog))}catch(e){}};
+
+function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shuf(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function count(g,lim){
+  let best=-1,bm=0,bc=10;
+  for(let i=0;i<81;i++)if(!g[i]){
+    const r=Math.floor(i/9),c=i%9,b=Math.floor(r/3)*3+Math.floor(c/3);let used=0;
+    for(let k=0;k<9;k++){used|=1<<g[r*9+k]|1<<g[k*9+c]}
+    const br=Math.floor(r/3)*3,bc2=Math.floor(c/3)*3;
+    for(let y=0;y<3;y++)for(let x=0;x<3;x++)used|=1<<g[(br+y)*9+bc2+x];
+    let n=0,m=0;for(let v=1;v<=9;v++)if(!(used>>v&1)){n++;m|=1<<v}
+    if(n===0)return 0;if(n<bc){bc=n;best=i;bm=m}
+  }
+  if(best<0)return 1;
+  let t=0;
+  for(let v=1;v<=9;v++)if(bm>>v&1){g[best]=v;t+=count(g,lim);g[best]=0;if(t>=lim)break}
+  return t;
+}
+function gen(l){
+  const r=rng(l*7919+13),d=shuf([1,2,3,4,5,6,7,8,9],r);
+  const bands=shuf([0,1,2],r),stacks=shuf([0,1,2],r);
+  const rows=[],cols=[];
+  bands.forEach(b=>shuf([0,1,2],r).forEach(x=>rows.push(b*3+x)));
+  stacks.forEach(b=>shuf([0,1,2],r).forEach(x=>cols.push(b*3+x)));
+  const sol=[];
+  for(const rr of rows)for(const cc of cols)sol.push(d[(rr*3+Math.floor(rr/3)+cc)%9]);
+  const tier=Math.floor((l-1)/10),pos=(l-1)%10,target=CLUES[tier]-Math.floor(pos/3);
+  const g=sol.slice();let left=81;
+  for(const i of shuf([...Array(81).keys()],r)){
+    if(left<=target)break;
+    const v=g[i];g[i]=0;
+    if(count(g,2)!==1)g[i]=v;else left--;
+  }
+  return{sol,g};
+}
+
+let L=0,sol,g,given,sel=-1,mis=0,secs=0,tmr=null,done=false;
+const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+const stars=n=>'★'.repeat(n)+'☆'.repeat(5-n);
+
+function buildMenu(){
+  let h='',total=0,n=0;
+  for(let t=0;t<5;t++){
+    h+=`<div class="tier">Levels ${t*10+1}–${t*10+10}</div><div class="lv">`;
+    for(let i=1;i<=10;i++){
+      const l=t*10+i,r=prog.res[l];if(r){total+=r.points;n++}
+      h+=`<button class="lb ${r?'done':''}" data-l="${l}" ${l>prog.unlocked?'disabled':''}>${l>prog.unlocked?'🔒':l}<small>${r?'★'.repeat(r.stars):''}</small></button>`;
+    }
+    h+='</div>';
+  }
+  $('levels').innerHTML=h;$('tot').textContent=total;$('prog').textContent=n+'/50 done';
+  $('allDone').classList.toggle('hide',n<50);
+  document.querySelectorAll('.lb').forEach(b=>b.onclick=()=>start(+b.dataset.l));
+}
+function start(l){
+  L=l;const p=gen(l);sol=p.sol;g=p.g.slice();given=p.g.map(v=>v>0);
+  sel=-1;mis=0;secs=0;done=false;
+  $('menu').classList.add('hide');$('game').classList.remove('hide');$('modal').classList.add('hide');
+  $('ttl').textContent='Level '+l;
+  $('timer').textContent='0:00';$('mis').textContent=0;
+  clearInterval(tmr);tmr=setInterval(()=>{secs++;$('timer').textContent=fmt(secs)},1000);
+  const b=$('board');b.innerHTML='';
+  for(let i=0;i<81;i++){const c=document.createElement('button');c.className='c';c.onclick=()=>{sel=i;draw()};b.appendChild(c)}
+  draw();
+}
+function draw(){
+  const cs=$('board').children,sv=sel>=0?g[sel]:0;
+  for(let i=0;i<81;i++){
+    const c=cs[i],v=g[i];c.textContent=v||'';
+    c.className='c'+(given[i]?' g':v?' m':'')+(v&&v!==sol[i]?' bad':'')+(i===sel?' sel':sv&&v===sv?' same':'');
+  }
+}
+function put(v){
+  if(done||sel<0||given[sel])return;
+  g[sel]=v;
+  if(v&&v!==sol[sel]){mis++;$('mis').textContent=mis}
+  draw();
+  if(g.every((x,i)=>x===sol[i]))finish();
+}
+function finish(){
+  done=true;clearInterval(tmr);
+  const t=Math.floor((L-1)/10),par=PAR[t],base=BASE[t];
+  let pts=Math.round(base*Math.max(.1,1-secs/(2*par)));
+  const bonus=(secs<par/2?200:secs<par?100:0)+(mis===0?100:0);
+  pts+=bonus;
+  const ratio=pts/(base+300),st=ratio>=.85?5:ratio>=.7?4:ratio>=.5?3:ratio>=.3?2:1;
+  prog.res[L]={time:secs,points:pts,stars:st};
+  if(L<50)prog.unlocked=Math.max(prog.unlocked,L+1);
+  save();
+  const all=Object.keys(prog.res).length>=50;
+  $('mbox').innerHTML=`<div class="stars">${stars(st)}</div><h2>${MSGS[(L-1)%4]}</h2>
+  <div class="stat"><div><b>${fmt(secs)}</b>Time</div><div><b>${pts}</b>Points</div><div><b>${mis}</b>Mistakes</div></div>
+  <div class="note" style="margin:0 0 8px">Includes ${bonus} bonus points (speed and no-mistake bonuses)</div>
+  ${all?`<h2>🏆 Incredible! You completed all 50 levels!</h2><p>Every puzzle is solved. Total: <b>${Object.values(prog.res).reduce((a,r)=>a+r.points,0)}</b> points.</p>`:''}
+  ${L<50?`<button class="btn" id="nx">Next level →</button>`:''}<button class="btn o" id="mn">Level menu</button>`;
+  $('modal').classList.remove('hide');
+  if($('nx'))$('nx').onclick=()=>start(L+1);
+  $('mn').onclick=toMenu;
+}
+function toMenu(){clearInterval(tmr);$('modal').classList.add('hide');$('game').classList.add('hide');$('menu').classList.remove('hide');buildMenu()}
+$('back').onclick=toMenu;
+$('pad').innerHTML=[1,2,3,4,5,6,7,8,9].map(n=>`<button data-n="${n}">${n}</button>`).join('')+'<button data-n="0">⌫</button>';
+$('pad').onclick=e=>{const b=e.target.closest('button');if(b)put(+b.dataset.n)};
+document.addEventListener('keydown',e=>{
+  if($('game').classList.contains('hide'))return;
+  if(e.key>='1'&&e.key<='9')put(+e.key);
+  else if(e.key==='Backspace'||e.key==='Delete'||e.key==='0')put(0);
+  else if(sel>=0){const m={ArrowLeft:-1,ArrowRight:1,ArrowUp:-9,ArrowDown:9}[e.key];if(m){const n=sel+m;if(n>=0&&n<81&&!(m===-1&&sel%9===0)&&!(m===1&&sel%9===8)){sel=n;draw();e.preventDefault()}}}
+});
+buildMenu();
+</script>
+</body>
+</html>
